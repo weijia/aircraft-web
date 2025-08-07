@@ -1,0 +1,56 @@
+{
+  "basic": {
+    "health": 30,
+    "speed": 100,
+    "score": 100,
+    "texture": "assets/enemy_basic.png",
+    "weapons": ["default"],
+    "movementPattern": "linear"
+  },
+  "fast": {
+    "health": 15,
+    "speed": 200,
+    "score": 150,
+    "texture": "assets/enemy_fast.png",
+    "weapons": ["default"],
+    "movementPattern": "zigzag"
+  },
+  "tank": {
+    "health": 100,
+    "speed": 50,
+    "score": 300,
+    "texture": "assets/enemy_tank.png",
+    "weapons": ["missile"],
+    "movementPattern": "linear"
+  },
+  "boss": {
+    "health": 500,
+    "speed": 30,
+    "score": 1000,
+    "texture": "assets/enemy_boss.png",
+    "weapons": ["shotgun", "missile"],
+    "movementPattern": "circular"
+  },
+  "drone": {
+    "health": 20,
+    "speed": 150,
+    "score": 120,
+    "texture": "assets/enemy_drone.png",
+    "weapons": ["laser"],
+    "movementPattern": "zigzag",
+    "spawnRate": 1.5
+  },
+  "bomber": {
+    "health": 80,
+    "speed": 70,
+    "score": 250,
+    "texture": "assets/enemy_bomber.png",
+    "weapons": ["flamethrower"],
+    "movementPattern": "linear",
+    "specialProperties": {
+      "explodeOnDeath": true,
+      "explosionDamage": 50,
+      "explosionRadius": 100
+    }
+  }
+}

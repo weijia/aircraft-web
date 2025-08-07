@@ -1,0 +1,51 @@
+{
+  "health": {
+    "type": "powerup",
+    "effect": "health",
+    "value": 20,
+    "texture": "assets/item_health.png"
+  },
+  "shield": {
+    "type": "powerup",
+    "effect": "shield",
+    "duration": 5000,
+    "texture": "assets/item_shield.png"
+  },
+  "laser": {
+    "type": "weapon",
+    "effect": "weapon",
+    "value": "laser",
+    "texture": "assets/item_laser.png"
+  },
+  "missile": {
+    "type": "weapon",
+    "effect": "weapon",
+    "value": "missile",
+    "texture": "assets/item_missile.png"
+  },
+  "shotgun": {
+    "type": "weapon",
+    "effect": "weapon",
+    "value": "shotgun",
+    "texture": "assets/item_shotgun.png"
+  },
+  "speedBoost": {
+    "type": "powerup",
+    "effect": "speed",
+    "value": 1.5,
+    "duration": 8000,
+    "texture": "assets/item_speed.png"
+  },
+  "extraLife": {
+    "type": "powerup",
+    "effect": "life",
+    "value": 1,
+    "texture": "assets/item_life.png"
+  },
+  "plasma": {
+    "type": "weapon",
+    "effect": "weapon",
+    "value": "plasma",
+    "texture": "assets/item_plasma.png"
+  }
+}

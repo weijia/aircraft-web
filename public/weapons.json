@@ -1,0 +1,56 @@
+{
+  "laser": {
+    "type": "projectile",
+    "damage": 15,
+    "cooldown": 200,
+    "projectileSpeed": 600,
+    "projectileLifetime": 1500,
+    "texture": "assets/laser.png"
+  },
+  "missile": {
+    "type": "homing",
+    "damage": 30,
+    "cooldown": 1000,
+    "projectileSpeed": 300,
+    "projectileLifetime": 3000,
+    "blastRadius": 50,
+    "texture": "assets/missile.png"
+  },
+  "shotgun": {
+    "type": "projectile",
+    "damage": 8,
+    "cooldown": 600,
+    "projectileSpeed": 450,
+    "projectileLifetime": 1000,
+    "spread": 0.5,
+    "projectileCount": 5,
+    "texture": "assets/bullet.png"
+  },
+  "plasma": {
+    "type": "projectile",
+    "damage": 20,
+    "cooldown": 400,
+    "projectileSpeed": 550,
+    "projectileLifetime": 1800,
+    "texture": "assets/plasma.png",
+    "specialProperties": {
+      "piercing": true,
+      "glowEffect": true,
+      "color": "#00ffff"
+    }
+  },
+  "flamethrower": {
+    "type": "projectile",
+    "damage": 5,
+    "cooldown": 100,
+    "projectileSpeed": 300,
+    "projectileLifetime": 800,
+    "spread": 0.3,
+    "projectileCount": 3,
+    "texture": "assets/flame.png",
+    "specialProperties": {
+      "burnDamage": 2,
+      "burnDuration": 3000
+    }
+  }
+}
