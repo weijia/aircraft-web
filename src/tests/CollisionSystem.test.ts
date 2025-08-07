@@ -146,9 +146,9 @@ describe('碰撞层测试', function collisionLayerTests() {
   });
 });
 
-// 碰撞事件测试套件
-describe('碰撞事件测试', function collisionEventTests() {
-  test('碰撞事件类型', () => {
+// 碰撞事件ENTER测试
+describe('碰撞事件ENTER测试', function collisionEventEnterTests() {
+  test('碰撞开始事件', () => {
     // 创建两个实体
     const entityA = new Entity();
     entityA.addComponent(new TransformComponent(100, 100));
@@ -181,14 +181,76 @@ describe('碰撞事件测试', function collisionEventTests() {
     world.update(0.016);
     expect(collisionEvents.length).toBe(1);
     expect(collisionEvents[0]).toBe(CollisionEventType.ENTER);
-    collisionEvents.length = 0;
+  });
+});
+
+// 碰撞事件STAY测试
+describe('碰撞事件STAY测试', function collisionEventStayTests() {
+  test('碰撞持续事件', () => {
+    // 创建两个实体
+    const entityA = new Entity();
+    entityA.addComponent(new TransformComponent(100, 100));
+    entityA.addComponent(new ColliderComponent(ColliderType.RECTANGLE, 50, 50));
     
-    // 保持碰撞状态
+    const entityB = new Entity();
+    entityB.addComponent(new TransformComponent(120, 120));
+    entityB.addComponent(new ColliderComponent(ColliderType.RECTANGLE, 50, 50));
+    
+    // 添加到世界
+    world.addEntity(entityA);
+    world.addEntity(entityB);
+    
+    // 监听碰撞事件
+    const collisionEvents: CollisionEventType[] = [];
+    collisionSystem.addCollisionListener((event) => {
+      collisionEvents.push(event.type);
+    });
+    
+    // 第一次更新：触发ENTER事件
+    world.update(0.016);
+    collisionEvents.length = 0; // 清空事件列表
+    
+    // 第二次更新：应该触发STAY事件
     world.update(0.016);
     expect(collisionEvents.length).toBe(1);
     expect(collisionEvents[0]).toBe(CollisionEventType.STAY);
-    collisionEvents.length = 0;
+  });
+});
+
+// 碰撞事件EXIT测试
+describe('碰撞事件EXIT测试', function collisionEventExitTests() {
+  test('碰撞结束事件', () => {
+    // 创建两个实体
+    const entityA = new Entity();
+    entityA.addComponent(new TransformComponent(100, 100));
+    entityA.addComponent(new ColliderComponent(ColliderType.RECTANGLE, 50, 50));
+    
+    const entityB = new Entity();
+    entityB.addComponent(new TransformComponent(120, 120));
+    entityB.addComponent(new ColliderComponent(ColliderType.RECTANGLE, 50, 50));
+    
+    // 添加到世界
+    world.addEntity(entityA);
+    world.addEntity(entityB);
+    
+    // 监听碰撞事件
+    const collisionEvents: CollisionEventType[] = [];
+    collisionSystem.addCollisionListener((event) => {
+      collisionEvents.push(event.type);
+    });
+    
+    // 第一次更新：触发ENTER事件
+    world.update(0.016);
+    collisionEvents.length = 0; // 清空事件列表
     
     // 移动实体B使其不再与实体A碰撞
+    const transformB = entityB.getComponent('Transform') as TransformComponent;
     transformB.x = 200;
-    transformB.
+    transformB.y = 200;
+    
+    // 应该触发EXIT事件
+    world.update(0.016);
+    expect(collisionEvents.length).toBe(1);
+    expect(collisionEvents[0]).toBe(CollisionEventType.EXIT);
+  });
+});
