@@ -12,6 +12,7 @@ import { EntityFactory } from '../factories/EntityFactory';
 import { Entity } from './ecs/Entity';
 import { HealthComponent } from '../components/HealthComponent';
 import { WeaponComponent } from '../components/WeaponComponent';
+import { TransformComponent } from '../components/TransformComponent';
 
 /**
  * 游戏类 - 管理游戏的整体逻辑
@@ -442,10 +443,11 @@ export class Game {
         this.addScore(score);
       }
       
-      // 随机掉落道具（20%概率）
-      if (Math.random() < 0.2) {
-        const x = entity.getComponent('Transform')?.x || 0;
-        const y = entity.getComponent('Transform')?.y || 0;
+    // 随机掉落道具（20%概率）
+    if (Math.random() < 0.2) {
+      const transform = entity.getComponent('Transform') as TransformComponent;
+      const x = transform?.x || 0;
+      const y = transform?.y || 0;
         
         // 随机选择道具类型
         const itemTypes = Object.keys(this.configLoader.getAllItemConfigs());
@@ -515,13 +517,40 @@ export class Game {
   }
 
   /**
+   * 重置游戏
+   */
+  public reset(): void {
+    this.score = 0;
+    this.lives = 3;
+    
+    // 移除所有实体
+    const entities = this.world.getEntities();
+    for (const entity of entities) {
+      this.world.removeEntity(entity.getId());
+    }
+    
+    // 重新初始化世界
+    this.respawnPlayer();
+    this.updateUI();
+  }
+  
+  /**
    * 游戏结束
    */
   private gameOver(): void {
     this.isRunning = false;
+    console.log('游戏结束，最终得分：', this.score);
     
-    // 显示游戏结束消息
-    alert(`游戏结束！\n你的分数：${this.score}`);
+    // 显示游戏结束界面
+    const gameOverElement = document.getElementById('game-over');
+    if (gameOverElement) {
+      gameOverElement.style.display = 'flex';
+      
+      const finalScoreElement = document.getElementById('final-score');
+      if (finalScoreElement) {
+        finalScoreElement.textContent = this.score.toString();
+      }
+    }
   }
 
   /**

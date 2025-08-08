@@ -66,7 +66,6 @@ export class World {
    */
   public addSystem(system: System): System {
     system.setWorld(this);
-    system.init();
     
     // 按优先级插入系统
     const priority = system.getPriority();
@@ -88,7 +87,7 @@ export class World {
     if (index !== -1) {
       const system = this.systems[index];
       system.destroy();
-      system.setWorld(null);
+      system.setWorld(null as any);
       this.systems.splice(index, 1);
     }
   }
@@ -154,14 +153,10 @@ export class World {
   }
 
   /**
-   * 移除实体监听器
-   * @param listener 监听器函数
+   * 对系统按优先级排序
    */
-  public removeEntityListener(listener: (entity: Entity, added: boolean) => void): void {
-    const index = this.entityListeners.indexOf(listener);
-    if (index !== -1) {
-      this.entityListeners.splice(index, 1);
-    }
+  private sortSystems(): void {
+    this.systems.sort((a, b) => a.getPriority() - b.getPriority());
   }
 
   /**
@@ -177,7 +172,7 @@ export class World {
     // 销毁所有系统
     for (const system of this.systems) {
       system.destroy();
-      system.setWorld(null);
+      system.setWorld(null as any);
     }
     this.systems = [];
   }
