@@ -135,7 +135,7 @@ export class ConfigLoader {
         type: z.string(),
         duration: z.number().positive().optional(),
         effect: z.string(),
-        value: z.number().optional(),
+        value: z.union([z.number(), z.string()]).optional(),
         texture: z.string().optional(),
         soundEffect: z.string().optional().nullable(),
         specialProperties: z.record(z.unknown()).optional()
