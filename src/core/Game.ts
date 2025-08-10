@@ -505,15 +505,50 @@ export class Game {
    * 重生玩家
    */
   private respawnPlayer(): void {
-    if (!this.canvas) return;
+    if (!this.canvas) {
+      console.error('画布不存在，无法创建玩家');
+      return;
+    }
     
-    // 创建新的玩家实体
-    const x = this.canvas.width / 2;
-    const y = this.canvas.height - 50;
-    this.player = this.entityFactory.createPlayer(x, y);
-    
-    // 添加到世界
-    this.world.addEntity(this.player);
+    try {
+      // 创建新的玩家实体
+      const x = this.canvas.width / 2;
+      const y = this.canvas.height - 50;
+      console.log(`创建玩家实体，位置: (${x}, ${y})`);
+      
+      // 直接在Canvas上绘制一个玩家，确认Canvas可用
+      const ctx = this.canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#FF0000';
+        ctx.fillRect(x - 20, y - 20, 40, 40);
+        console.log('已在Canvas上直接绘制玩家方块');
+      } else {
+        console.error('无法获取Canvas 2D上下文');
+      }
+      
+      // 使用实体工厂创建玩家
+      this.player = this.entityFactory.createPlayer(x, y);
+      console.log('玩家实体已创建:', this.player);
+      
+      // 检查玩家实体的组件
+      const transform = this.player.getComponent('Transform');
+      const render = this.player.getComponent('Render');
+      console.log('玩家组件:', {
+        transform: transform ? '存在' : '不存在',
+        render: render ? '存在' : '不存在'
+      });
+      
+      // 添加到世界
+      console.log('将玩家添加到世界');
+      this.world.addEntity(this.player);
+      console.log('玩家实体ID:', this.player.getId());
+      
+      // 检查世界中的实体数量
+      const entities = this.world.getEntities();
+      console.log(`世界中的实体数量: ${entities.length}`);
+    } catch (error) {
+      console.error('创建玩家时出错:', error);
+    }
   }
 
   /**
@@ -559,6 +594,8 @@ export class Game {
   public start(): void {
     if (this.isRunning) return;
     
+    console.log('游戏开始');
+    
     this.isRunning = true;
     this.score = 0;
     this.lives = 3;
@@ -567,12 +604,14 @@ export class Game {
     this.world.clear();
     
     // 创建玩家
+    console.log('创建玩家');
     this.respawnPlayer();
     
     // 更新UI
     this.updateUI();
     
     // 开始游戏循环
+    console.log('开始游戏循环');
     this.lastFrameTime = performance.now();
     requestAnimationFrame(this.gameLoop.bind(this));
   }
@@ -600,7 +639,10 @@ export class Game {
    * @param currentTime 当前时间
    */
   private gameLoop(currentTime: number): void {
-    if (!this.isRunning) return;
+    if (!this.isRunning) {
+      console.log('游戏已暂停，不更新游戏循环');
+      return;
+    }
     
     // 计算时间增量（秒）
     const deltaTime = (currentTime - this.lastFrameTime) / 1000;
@@ -609,8 +651,24 @@ export class Game {
     // 限制时间增量，防止大延迟导致的问题
     const cappedDeltaTime = Math.min(deltaTime, 0.1);
     
+    // 检查世界中的实体数量
+    const entities = this.world.getEntities();
+    if (entities.length === 0) {
+      console.log('警告：世界中没有实体');
+      
+      // 如果没有玩家，尝试重新创建
+      if (!this.player || !this.player.isActive()) {
+        console.log('尝试重新创建玩家');
+        this.respawnPlayer();
+      }
+    }
+    
     // 更新世界
-    this.world.update(cappedDeltaTime);
+    try {
+      this.world.update(cappedDeltaTime);
+    } catch (error) {
+      console.error('更新世界时出错:', error);
+    }
     
     // 继续游戏循环
     requestAnimationFrame(this.gameLoop.bind(this));
@@ -666,12 +724,28 @@ export class Game {
   public resizeCanvas(): void {
     if (!this.canvas) return;
     
-    // 获取画布容器的尺寸
-    const container = this.canvas.parentElement;
-    if (container) {
-      // 设置画布尺寸与容器相同
-      this.canvas.width = container.clientWidth;
-      this.canvas.height = container.clientHeight;
+    try {
+      // 获取画布容器的尺寸
+      const container = this.canvas.parentElement;
+      if (container) {
+        // 设置画布尺寸与容器相同
+        this.canvas.width = container.clientWidth;
+        this.canvas.height = container.clientHeight;
+      } else {
+        // 如果没有父元素，使用默认尺寸
+        this.canvas.width = 800;
+        this.canvas.height = 600;
+      }
+      
+      // 更新系统
+      this.systems.movement.setCanvasSize(this.canvas.width, this.canvas.height);
+      this.systems.enemySpawn.setCanvasSize(this.canvas.width, this.canvas.height);
+    } catch (error) {
+      console.error('调整画布尺寸时出错:', error);
+      
+      // 使用默认尺寸
+      this.canvas.width = 800;
+      this.canvas.height = 600;
       
       // 更新系统
       this.systems.movement.setCanvasSize(this.canvas.width, this.canvas.height);

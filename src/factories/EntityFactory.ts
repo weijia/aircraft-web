@@ -38,7 +38,7 @@ export class EntityFactory {
     
     // 添加渲染组件
     const render = new RenderComponent(40, 40, '#3498db');
-    render.setImage('assets/player.png');
+    // 不使用图像，直接使用彩色矩形
     player.addComponent(render);
     
     // 添加碰撞组件
@@ -113,9 +113,7 @@ export class EntityFactory {
     
     // 添加渲染组件
     const render = new RenderComponent(30, 30, '#e74c3c');
-    if (enemyConfig.texture) {
-      render.setImage(enemyConfig.texture);
-    }
+    // 不使用图像，直接使用彩色矩形
     enemy.addComponent(render);
     
     // 添加碰撞组件
@@ -222,9 +220,7 @@ export class EntityFactory {
     // 添加渲染组件
     const color = isPlayerBullet ? '#3498db' : '#e74c3c';
     const render = new RenderComponent(10, 20, color);
-    if (weaponConfig.texture) {
-      render.setImage(weaponConfig.texture);
-    }
+    // 不使用图像，直接使用彩色矩形
     projectile.addComponent(render);
     
     // 添加碰撞组件
@@ -305,9 +301,7 @@ export class EntityFactory {
     }
     
     const render = new RenderComponent(20, 20, color);
-    if (itemConfig.texture) {
-      render.setImage(itemConfig.texture);
-    }
+    // 不使用图像，直接使用彩色矩形
     item.addComponent(render);
     
     // 添加碰撞组件

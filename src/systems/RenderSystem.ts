@@ -43,12 +43,32 @@ export class RenderSystem extends System {
    * 调整画布尺寸
    */
   private resizeCanvas(): void {
-    // 获取画布容器的尺寸
-    const container = this.canvas.parentElement;
-    if (container) {
-      // 设置画布尺寸与容器相同
-      this.canvas.width = container.clientWidth;
-      this.canvas.height = container.clientHeight;
+    try {
+      // 获取画布容器的尺寸
+      const container = this.canvas.parentElement;
+      if (container) {
+        // 设置画布尺寸与容器相同
+        this.canvas.width = container.clientWidth;
+        this.canvas.height = container.clientHeight;
+        
+        // 更新宽高
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+      } else {
+        // 如果没有父元素，使用默认尺寸
+        this.canvas.width = 800;
+        this.canvas.height = 600;
+        
+        // 更新宽高
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
+      }
+    } catch (error) {
+      console.error('调整画布尺寸时出错:', error);
+      
+      // 使用默认尺寸
+      this.canvas.width = 800;
+      this.canvas.height = 600;
       
       // 更新宽高
       this.width = this.canvas.width;
@@ -71,18 +91,35 @@ export class RenderSystem extends System {
    * @param deltaTime 时间增量（秒）
    */
   public update(deltaTime: number): void {
-    if (!this.world) return;
+    if (!this.world) {
+      console.error('渲染系统：世界对象不存在');
+      return;
+    }
     
-    // 清空画布
-    this.context.fillStyle = this.backgroundColor;
+    // 保存当前画布内容
+    this.context.save();
+    
+    // 清空画布，但保留一个半透明层，这样可以看到之前手动绘制的内容
+    this.context.fillStyle = 'rgba(0, 0, 0, 0.3)';
     this.context.fillRect(0, 0, this.width, this.height);
     
     // 获取所有实体
     const entities = this.world.getEntities();
+    console.log(`渲染系统：世界中有 ${entities.length} 个实体`);
     
     // 过滤并排序实体（可以根据z-index或其他属性排序）
     const renderableEntities = entities
-      .filter((entity: Entity) => this.filter(entity) && entity.isActive())
+      .filter((entity: Entity) => {
+        const canRender = this.filter(entity) && entity.isActive();
+        if (!canRender && entity.hasTag('player')) {
+          console.log('玩家实体不可渲染:', 
+            '有Transform组件:', entity.hasComponent(TransformComponent.TYPE),
+            '有Render组件:', entity.hasComponent(RenderComponent.TYPE),
+            '是否激活:', entity.isActive()
+          );
+        }
+        return canRender;
+      })
       .sort((a: Entity, b: Entity) => {
         // 这里可以添加排序逻辑，例如按照y坐标排序以实现深度效果
         const transformA = a.getComponent(TransformComponent.TYPE) as TransformComponent;
@@ -95,10 +132,22 @@ export class RenderSystem extends System {
         return 0;
       });
     
+    console.log(`渲染系统：可渲染的实体数量 ${renderableEntities.length}`);
+    
     // 渲染实体
     for (const entity of renderableEntities) {
       this.renderEntity(entity);
     }
+    
+    // 恢复画布状态
+    this.context.restore();
+    
+    // 添加一个调试信息到画布上
+    this.context.fillStyle = '#FFFFFF';
+    this.context.font = '14px Arial';
+    this.context.fillText(`实体数量: ${entities.length}`, 10, 20);
+    this.context.fillText(`可渲染实体: ${renderableEntities.length}`, 10, 40);
+    this.context.fillText(`画布尺寸: ${this.width}x${this.height}`, 10, 60);
   }
 
   /**

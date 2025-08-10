@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>游戏资源生成器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .assets-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .asset-item {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 200px;
+        }
+        .asset-item h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        canvas {
+            display: block;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            background-color: #000;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .download-all {
+            background-color: #2196F3;
+            padding: 12px 20px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .download-all:hover {
+            background-color: #0b7dda;
+        }
+    </style>
+</head>
+<body>
+    <h1>飞行射击游戏资源生成器</h1>
+    <p>点击下方按钮生成并下载所有游戏资源。</p>
+    <button class="download-all" id="downloadAll">生成并下载所有资源</button>
+
+    <h2>玩家相关资源</h2>
+    <div class="assets-container" id="playerAssets"></div>
+
+    <h2>敌人相关资源</h2>
+    <div class="assets-container" id="enemyAssets"></div>
+
+    <h2>道具相关资源</h2>
+    <div class="assets-container" id="itemAssets"></div>
+
+    <script>
+        // 资源定义
+        const assets = {
+            player: [
+                { name: 'player', width: 64, height: 64, draw: drawPlayer },
+                { name: 'bullet', width: 16, height: 16, draw: drawBullet },
+                { name: 'laser', width: 16, height: 32, draw: drawLaser },
+                { name: 'missile', width: 20, height: 40, draw: drawMissile },
+                { name: 'plasma', width: 24, height: 24, draw: drawPlasma },
+                { name: 'flame', width: 24, height: 48, draw: drawFlame }
+            ],
+            enemy: [
+                { name: 'enemy_basic', width: 48, height: 48, draw: drawEnemyBasic },
+                { name: 'enemy_fast', width: 40, height: 40, draw: drawEnemyFast },
+                { name: 'enemy_tank', width: 64, height: 64, draw: drawEnemyTank },
+                { name: 'enemy_boss', width: 128, height: 128, draw: drawEnemyBoss },
+                { name: 'enemy_drone', width: 32, height: 32, draw: drawEnemyDrone },
+                { name: 'enemy_bomber', width: 72, height: 72, draw: drawEnemyBomber },
+                { name: 'enemy_bullet', width: 16, height: 16, draw: drawEnemyBullet }
+            ],
+            item: [
+                { name: 'item_health', width: 32, height: 32, draw: drawItemHealth },
+                { name: 'item_shield', width: 32, height: 32, draw: drawItemShield },
+                { name: 'item_laser', width: 32, height: 32, draw: drawItemLaser },
+                { name: 'item_missile', width: 32, height: 32, draw: drawItemMissile },
+                { name: 'item_shotgun', width: 32, height: 32, draw: drawItemShotgun },
+                { name: 'item_speed', width: 32, height: 32, draw: drawItemSpeed },
+                { name: 'item_life', width: 32, height: 32, draw: drawItemLife },
+                { name: 'item_plasma', width: 32, height: 32, draw: drawItemPlasma }
+            ]
+        };
+
+        // 绘制函数
+        function drawPlayer(ctx, width, height) {
+            // 飞机主体
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 0);
+            ctx.lineTo(width, height * 0.7);
+            ctx.lineTo(width * 0.7, height);
+            ctx.lineTo(width * 0.3, height);
+            ctx.lineTo(0, height * 0.7);
+            ctx.closePath();
+            ctx.fill();
+
+            // 机翼
+            ctx.fillStyle = '#2980b9';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.2, height * 0.6);
+            ctx.lineTo(0, height * 0.8);
+            ctx.lineTo(width * 0.3, height * 0.7);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.moveTo(width * 0.8, height * 0.6);
+            ctx.lineTo(width, height * 0.8);
+            ctx.lineTo(width * 0.7, height * 0.7);
+            ctx.closePath();
+            ctx.fill();
+
+            // 驾驶舱
+            ctx.fillStyle = '#ecf0f1';
+            ctx.beginPath();
+            ctx.ellipse(width / 2, height * 0.4, width * 0.15, height * 0.1, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 引擎喷射
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.4, height);
+            ctx.lineTo(width * 0.45, height + height * 0.2);
+            ctx.lineTo(width * 0.55, height + height * 0.2);
+            ctx.lineTo(width * 0.6, height);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawBullet(ctx, width, height) {
+            // 子弹主体
+            ctx.fillStyle = '#f1c40f';
+            ctx.beginPath();
+            ctx.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 子弹内部
+            ctx.fillStyle = '#f39c12';
+            ctx.beginPath();
+            ctx.ellipse(width / 2, height / 2, width / 3, height / 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawLaser(ctx, width, height) {
+            // 激光主体
+            const gradient = ctx.createLinearGradient(0, 0, width, 0);
+            gradient.addColorStop(0, 'rgba(231, 76, 60, 0.2)');
+            gradient.addColorStop(0.5, 'rgba(231, 76, 60, 1)');
+            gradient.addColorStop(1, 'rgba(231, 76, 60, 0.2)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            // 激光中心
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(width / 2 - width / 8, 0, width / 4, height);
+        }
+
+        function drawMissile(ctx, width, height) {
+            // 导弹主体
+            ctx.fillStyle = '#7f8c8d';
+            ctx.fillRect(width * 0.25, height * 0.2, width * 0.5, height * 0.6);
+            
+            // 导弹头
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 0);
+            ctx.lineTo(width * 0.75, height * 0.2);
+            ctx.lineTo(width * 0.25, height * 0.2);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 导弹尾翼
+            ctx.fillStyle = '#7f8c8d';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.25, height * 0.8);
+            ctx.lineTo(0, height);
+            ctx.lineTo(width * 0.25, height * 0.9);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(width * 0.75, height * 0.8);
+            ctx.lineTo(width, height);
+            ctx.lineTo(width * 0.75, height * 0.9);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 导弹尾部火焰
+            ctx.fillStyle = '#e67e22';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.35, height * 0.8);
+            ctx.lineTo(width * 0.3, height);
+            ctx.lineTo(width * 0.7, height);
+            ctx.lineTo(width * 0.65, height * 0.8);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawPlasma(ctx, width, height) {
+            // 等离子球外环
+            const gradient = ctx.createRadialGradient(
+                width / 2, height / 2, width * 0.1,
+                width / 2, height / 2, width * 0.5
+            );
+            gradient.addColorStop(0, '#9b59b6');
+            gradient.addColorStop(0.7, '#8e44ad');
+            gradient.addColorStop(1, 'rgba(142, 68, 173, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 等离子球内核
+            ctx.fillStyle = '#ecf0f1';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 电流效果
+            ctx.strokeStyle = '#ecf0f1';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const length = width * 0.3;
+                ctx.beginPath();
+                ctx.moveTo(width / 2, height / 2);
+                ctx.lineTo(
+                    width / 2 + Math.cos(angle) * length,
+                    height / 2 + Math.sin(angle) * length
+                );
+                ctx.stroke();
+            }
+        }
+
+        function drawFlame(ctx, width, height) {
+            // 火焰渐变
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, '#e74c3c');
+            gradient.addColorStop(0.5, '#e67e22');
+            gradient.addColorStop(1, '#f1c40f');
+            
+            // 火焰形状
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 0);
+            
+            // 左侧曲线
+            ctx.quadraticCurveTo(0, height * 0.5, width / 4, height * 0.75);
+            ctx.quadraticCurveTo(width / 3, height * 0.9, width / 2, height);
+            
+            // 右侧曲线
+            ctx.quadraticCurveTo(width * 2/3, height * 0.9, width * 3/4, height * 0.75);
+            ctx.quadraticCurveTo(width, height * 0.5, width / 2, 0);
+            
+            ctx.closePath();
+            ctx.fill();
+            
+            // 火焰内部
+            const innerGradient = ctx.createLinearGradient(0, height * 0.3, 0, height * 0.7);
+            innerGradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+            innerGradient.addColorStop(1, 'rgba(241, 196, 15, 0)');
+            
+            ctx.fillStyle = innerGradient;
+            ctx.beginPath();
+            ctx.moveTo(width / 2, height * 0.2);
+            ctx.quadraticCurveTo(width * 0.4, height * 0.5, width / 2, height * 0.7);
+            ctx.quadraticCurveTo(width * 0.6, height * 0.5, width / 2, height * 0.2);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawEnemyBasic(ctx, width, height) {
+            // 敌机主体
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.moveTo(width / 2, height);
+            ctx.lineTo(width, height * 0.3);
+            ctx.lineTo(width * 0.7, 0);
+            ctx.lineTo(width * 0.3, 0);
+            ctx.lineTo(0, height * 0.3);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 敌机细节
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            ctx.moveTo(width / 2, height * 0.2);
+            ctx.lineTo(width * 0.7, height * 0.4);
+            ctx.lineTo(width * 0.5, height * 0.6);
+            ctx.lineTo(width * 0.3, height * 0.4);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 驾驶舱
+            ctx.fillStyle = '#2c3e50';
+            ctx.beginPath();
+            ctx.arc(width / 2, height * 0.4, width * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawEnemyFast(ctx, width, height) {
+            // 快速敌机主体
+            ctx.fillStyle = '#1abc9c';
+            ctx.beginPath();
+            ctx.moveTo(0, height * 0.3);
+            ctx.lineTo(width * 0.4, 0);
+            ctx.lineTo(width * 0.6, 0);
+            ctx.lineTo(width, height * 0.3);
+            ctx.lineTo(width * 0.7, height);
+            ctx.lineTo(width * 0.3, height);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 敌机细节
+            ctx.fillStyle = '#16a085';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.3, height * 0.6);
+            ctx.lineTo(width * 0.5, height * 0.3);
+            ctx.lineTo(width * 0.7, height * 0.6);
+            ctx.lineTo(width * 0.5, height * 0.8);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 驾驶舱
+            ctx.fillStyle = '#2c3e50';
+            ctx.beginPath();
+            ctx.arc(width / 2, height * 0.4, width * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawEnemyTank(ctx, width, height) {
+            // 坦克敌机主体
+            ctx.fillStyle = '#8e44ad';
+            ctx.fillRect(width * 0.2, height * 0.2, width * 0.6, height * 0.6);
+            
+            // 坦克炮塔
+            ctx.fillStyle = '#9b59b6';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 坦克装甲
+            ctx.fillStyle = '#7d3c98';
+            ctx.fillRect(0, height * 0.35, width, height * 0.3);
+            
+            // 坦克炮管
+            ctx.fillStyle = '#8e44ad';
+            ctx.fillRect(width * 0.45, 0, width * 0.1, height * 0.4);
+            
+            // 坦克履带
+            ctx.fillStyle = '#34495e';
+            ctx.fillRect(0, height * 0.15, width, height * 0.1);
+            ctx.fillRect(0, height * 0.75, width, height * 0.1);
+        }
+
+        function drawEnemyBoss(ctx, width, height) {
+            // Boss主体
+            ctx.fillStyle = '#2c3e50';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.3, 0);
+            ctx.lineTo(width * 0.7, 0);
+            ctx.lineTo(width, height * 0.3);
+            ctx.lineTo(width, height * 0.7);
+            ctx.lineTo(width * 0.7, height);
+            ctx.lineTo(width * 0.3, height);
+            ctx.lineTo(0, height * 0.7);
+            ctx.lineTo(0, height * 0.3);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Boss装甲
+            ctx.fillStyle = '#34495e';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.4, height * 0.1);
+            ctx.lineTo(width * 0.6, height * 0.1);
+            ctx.lineTo(width * 0.8, height * 0.3);
+            ctx.lineTo(width * 0.8, height * 0.7);
+            ctx.lineTo(width * 0.6, height * 0.9);
+            ctx.lineTo(width * 0.4, height * 0.9);
+            ctx.lineTo(width * 0.2, height * 0.7);
+            ctx.lineTo(width * 0.2, height * 0.3);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Boss核心
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Boss武器
+            ctx.fillStyle = '#7f8c8d';
+            ctx.fillRect(width * 0.1, height * 0.4, width * 0.15, height * 0.2);
+            ctx.fillRect(width * 0.75, height * 0.4, width * 0.15, height * 0.2);
+            
+            // Boss炮塔
+            ctx.fillStyle = '#95a5a6';
+            ctx.beginPath();
+            ctx.arc(width * 0.25, height * 0.25, width * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(width * 0.75, height * 0.25, width * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(width * 0.25, height * 0.75, width * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(width * 0.75, height * 0.75, width * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawEnemyDrone(ctx, width, height) {
+            // 无人机主体
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 无人机边缘
+            ctx.strokeStyle = '#2980b9';
+            ctx.lineWidth = width * 0.05;
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.35, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 无人机中心
+            ctx.fillStyle = '#ecf0f1';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 无人机传感器
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.05, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawEnemyBomber(ctx, width, height) {
+            // 轰炸机主体
+            ctx.fillStyle = '#95a5a6';
+            ctx.beginPath();
+            ctx.ellipse(width / 2, height / 2, width * 0.4, height * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 轰炸机机翼
+            ctx.fillStyle = '#7f8c8d';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.3, height * 0.4);
+            ctx.lineTo(0, height * 0.3);
+            ctx.lineTo(0, height * 0.5);
+            ctx.lineTo(width * 0.3, height * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.moveTo(width * 0.7, height * 0.4);
+            ctx.lineTo(width, height * 0.3);
+            ctx.lineTo(width, height * 0.5);
+            ctx.lineTo(width * 0.7, height * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 轰炸机尾翼
+            ctx.beginPath();
+            ctx.moveTo(width * 0.7, height * 0.45);
+            ctx.lineTo(width * 0.9, height * 0.2);
+            ctx.lineTo(width * 0.9, height * 0.4);
+            ctx.lineTo(width * 0.7, height * 0.55);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 轰炸机炸弹舱
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(width * 0.35, height * 0.6, width * 0.3, height * 0.1);
+            
+            // 轰炸机驾驶舱
+            ctx.fillStyle = '#2c3e50';
+            ctx.beginPath();
+            ctx.arc(width * 0.3, height * 0.4, width * 0.08, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawEnemyBullet(ctx, width, height) {
+            // 敌人子弹主体
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.ellipse(width / 2, height / 2, width / 2, height / 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 敌人子弹内部
+            ctx.fillStyle = '#c0392b';
+            ctx.beginPath();
+            ctx.ellipse(width / 2, height / 2, width / 3, height / 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawItemHealth(ctx, width, height) {
+            // 生命道具背景
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 生命道具十字
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(width * 0.4, height * 0.25, width * 0.2, height * 0.5);
+            ctx.fillRect(width * 0.25, height * 0.4, width * 0.5, height * 0.2);
+        }
+
+        function drawItemShield(ctx, width, height) {
+            // 护盾道具背景
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 护盾道具图案
+            ctx.strokeStyle = '#ecf0f1';
+            ctx.lineWidth = width * 0.08;
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.25, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 护盾中心点
+            ctx.fillStyle = '#2980b9';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawItemLaser(ctx, width, height) {
+            // 激光道具背景
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 激光道具图案
+            ctx.fillStyle = '#ecf0f1';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.5, height * 0.2);
+            ctx.lineTo(width * 0.65, height * 0.8);
+            ctx.lineTo(width * 0.35, height * 0.8);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 激光效果
+            ctx.strokeStyle = '#f1c40f';
+            ctx.lineWidth = width * 0.05;
+            ctx.beginPath();
+            ctx.moveTo(width * 0.5, height * 0.2);
+            ctx.lineTo(width * 0.5, height * 0.8);
+            ctx.stroke();
+        }
+
+        function drawItemMissile(ctx, width, height) {
+            // 导弹道具背景
+            ctx.fillStyle = '#7f8c8d';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 导弹道具图案
+            ctx.fillStyle = '#ecf0f1';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.5, height * 0.2);
+            ctx.lineTo(width * 0.65, height * 0.4);
+            ctx.lineTo(width * 0.55, height * 0.4);
+            ctx.lineTo(width * 0.55, height * 0.8);
+            ctx.lineTo(width * 0.45, height * 0.8);
+            ctx.lineTo(width * 0.45, height * 0.4);
+            ctx.lineTo(width * 0.35, height * 0.4);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawItemShotgun(ctx, width, height) {
+            // 散弹道具背景
+            ctx.fillStyle = '#f39c12';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 散弹道具图案
+            ctx.strokeStyle = '#ecf0f1';
+            ctx.lineWidth = width * 0.05;
+            
+            // 左散弹
+            ctx.beginPath();
+            ctx.moveTo(width * 0.3, height * 0.6);
+            ctx.lineTo(width * 0.2, height * 0.3);
+            ctx.stroke();
+            
+            // 中散弹
+            ctx.beginPath();
+            ctx.moveTo(width * 0.5, height * 0.6);
+            ctx.lineTo(width * 0.5, height * 0.2);
+            ctx.stroke();
+            
+            // 右散弹
+            ctx.beginPath();
+            ctx.moveTo(width * 0.7, height * 0.6);
+            ctx.lineTo(width * 0.8, height * 0.3);
+            ctx.stroke();
+            
+            // 散弹枪底座
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(width * 0.3, height * 0.6, width * 0.4, height * 0.2);
+        }
+
+        function drawItemSpeed(ctx, width, height) {
+            // 速度道具背景
+            ctx.fillStyle = '#2ecc71';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 速度道具图案
+            ctx.fillStyle = '#ecf0f1';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.3, height * 0.3);
+            ctx.lineTo(width * 0.7, height * 0.5);
+            ctx.lineTo(width * 0.3, height * 0.7);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawItemLife(ctx, width, height) {
+            // 额外生命道具背景
+            ctx.fillStyle = '#9b59b6';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 额外生命道具图案
+            ctx.fillStyle = '#ecf0f1';
+            ctx.beginPath();
+            ctx.moveTo(width * 0.5, height * 0.2);
+            ctx.lineTo(width * 0.65, height * 0.5);
+            ctx.lineTo(width * 0.8, height * 0.2);
+            ctx.lineTo(width * 0.65, height * 0.8);
+            ctx.lineTo(width * 0.35, height * 0.8);
+            ctx.lineTo(width * 0.2, height * 0.2);
+            ctx.lineTo(width * 0.35, height * 0.5);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawItemPlasma(ctx, width, height) {
+            // 等离子道具背景
+            ctx.fillStyle = '#9b59b6';
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 等离子道具图案
+            const gradient = ctx.createRadialGradient(
+                width / 2, height / 2, width * 0.05,
+                width / 2, height / 2, width * 0.3
+            );
+            gradient.addColorStop(0, '#ecf0f1');
+            gradient.addColorStop(0.7, '#8e44ad');
+            gradient.addColorStop(1, '#9b59b6');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width * 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 电流效果
+            ctx.strokeStyle = '#ecf0f1';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const length = width * 0.2;
+                ctx.beginPath();
+                ctx.moveTo(width / 2, height / 2);
+                ctx.lineTo(
+                    width / 2 + Math.cos(angle) * length,
+                    height / 2 + Math.sin(angle) * length
+                );
+                ctx.stroke();
+            }
+        }
+
+        // 初始化页面
+        window.onload = function() {
+            // 创建玩家资源
+            createAssetElements('playerAssets', assets.player);
+            
+            // 创建敌人资源
+            createAssetElements('enemyAssets', assets.enemy);
+            
+            // 创建道具资源
+            createAssetElements('itemAssets', assets.item);
+            
+            // 下载所有按钮
+            document.getElementById('downloadAll').addEventListener('click', downloadAllAssets);
+        };
+
+        // 创建资源元素
+        function createAssetElements(containerId, assetsList) {
+            const container = document.getElementById(containerId);
+            
+            assetsList.forEach(asset => {
+                const div = document.createElement('div');
+                div.className = 'asset-item';
+                
+                const h3 = document.createElement('h3');
+                h3.textContent = asset.name + '.png';
+                div.appendChild(h3);
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = asset.width;
+                canvas.height = asset.height;
+                canvas.style.width = '100%';
+                canvas.style.height = 'auto';
+                div.appendChild(canvas);
+                
+                const ctx = canvas.getContext('2d');
+                asset.draw(ctx, asset.width, asset.height);
+                
+                const button = document.createElement('button');
+                button.textContent = '下载';
+                button.addEventListener('click', () => downloadAsset(canvas, asset.name));
+                div.appendChild(button);
+                
+                container.appendChild(div);
+            });
+        }
+
+        // 下载单个资源
+        function downloadAsset(canvas, name) {
+            const link = document.createElement('a');
+            link.download = name + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // 下载所有资源
+        function downloadAllAssets() {
+            // 创建一个zip文件
+            const zip = new JSZip();
+            const promises = [];
+            
+            // 添加所有资源到zip
+            Object.keys(assets).forEach(category => {
+                assets[category].forEach(asset => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = asset.width;
+                    canvas.height = asset.height;
+                    const ctx = canvas.getContext('2d');
+                    asset.draw(ctx, asset.width, asset.height);
+                    
+                    const promise = new Promise(resolve => {
+                        canvas.toBlob(blob => {
+                            zip.file(asset.name + '.png', blob);
+                            resolve();
+                        }, 'image/png');
+                    });
+                    
+                    promises.push(promise);
+                });
+            });
+            
+            // 当所有资源都添加到zip后，下载zip文件
+            Promise.all(promises).then(() => {
+                zip.generateAsync({type: 'blob'}).then(content => {
+                    const link = document.createElement('a');
+                    link.download = 'game-assets.zip';
+                    link.href = URL.createObjectURL(content);
+                    link.click();
+                });
+            });
+        }
