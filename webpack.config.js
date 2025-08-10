@@ -54,5 +54,8 @@ module.exports = {
     compress: true,
     port: 9000,
     hot: true,
+    client: {
+      overlay: false, // 禁用错误覆盖层
+    },
   },
 };

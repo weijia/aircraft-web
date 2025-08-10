@@ -24,6 +24,13 @@
       border: 2px solid #444;
       margin: 0 auto;
     }
+
+    .game-wrapper {
+      position: relative;
+      width: 800px;
+      height: 600px;
+      margin: 0 auto;
+    }
     
     .controls {
       margin-top: 20px;
@@ -80,7 +87,9 @@
 <body>
   <h1>飞行射击游戏</h1>
   
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div class="game-wrapper">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+  </div>
   
   <div class="score-display">
     分数: <span id="scoreValue">0</span>
@@ -115,7 +124,9 @@
       width: 50,
       height: 50,
       speed: 5,
-      color: '#3498db'
+      color: '#3498db',
+      powerLevel: 0, // 能量等级
+      powerMaxLevel: 3 // 最大能量等级
     };
     
     // 子弹数组
@@ -129,6 +140,19 @@
     const enemySpeed = 3;
     const enemySpawnRate = 1500; // 毫秒
     let lastEnemySpawn = 0;
+    
+    // 道具数组
+    const powerups = [];
+    const powerupSpeed = 2;
+    const powerupTypes = [
+      { name: '速度提升', color: '#2ecc71', effect: 'speed' },
+      { name: '范围扩大', color: '#9b59b6', effect: 'spread' }
+    ];
+    
+    // 背景星星
+    const stars = [];
+    const starCount = 100;
+    const starSpeed = 2;
     
     // 按键状态
     const keys = {
@@ -153,8 +177,25 @@
       window.addEventListener('keydown', handleKeyDown);
       window.addEventListener('keyup', handleKeyUp);
       
+      // 初始化星星背景
+      initStars();
+      
       // 初始绘制
       drawGame();
+    }
+    
+    // 初始化星星背景
+    function initStars() {
+      stars.length = 0;
+      for (let i = 0; i < starCount; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 3 + 1,
+          speed: Math.random() * 2 + 1,
+          brightness: Math.random() * 0.5 + 0.5
+        });
+      }
     }
     
     // 开始游戏
@@ -176,13 +217,15 @@
       score = 0;
       updateScore();
       
-      // 重置玩家位置
+      // 重置玩家位置和能量等级
       player.x = canvas.width / 2;
       player.y = canvas.height - 100;
+      player.powerLevel = 0;
       
-      // 清空子弹和敌机
+      // 清空子弹、敌机和道具
       bullets.length = 0;
       enemies.length = 0;
+      powerups.length = 0;
       
       // 重绘
       drawGame();
@@ -232,6 +275,9 @@
     
     // 更新游戏状态
     function update() {
+      // 更新星星背景
+      updateStars();
+      
       // 移动玩家
       if (keys.left) player.x -= player.speed;
       if (keys.right) player.x += player.speed;
@@ -242,22 +288,95 @@
       player.x = Math.max(player.width / 2, Math.min(canvas.width - player.width / 2, player.x));
       player.y = Math.max(player.height / 2, Math.min(canvas.height - player.height / 2, player.y));
       
-      // 发射子弹
+      // 移动道具
+      for (let i = powerups.length - 1; i >= 0; i--) {
+        powerups[i].y += powerupSpeed;
+        
+        // 移除超出画布的道具
+        if (powerups[i].y - powerups[i].size > canvas.height) {
+          powerups.splice(i, 1);
+        }
+      }
+      
+    // 发射子弹
       const currentTime = Date.now();
       if (keys.space && currentTime - lastBulletTime > bulletCooldown) {
-        bullets.push({
-          x: player.x,
-          y: player.y - player.height / 2,
-          width: 5,
-          height: 15,
-          color: '#f1c40f'
-        });
+        // 根据能量等级发射不同数量和类型的子弹
+        switch(player.powerLevel) {
+          case 0: // 基础子弹
+            bullets.push({
+              x: player.x,
+              y: player.y - player.height / 2,
+              width: 5,
+              height: 15,
+              color: '#f1c40f',
+              speed: bulletSpeed
+            });
+            break;
+          case 1: // 双子弹
+            bullets.push({
+              x: player.x - 10,
+              y: player.y - player.height / 2,
+              width: 5,
+              height: 15,
+              color: '#f1c40f',
+              speed: bulletSpeed + 1
+            });
+            bullets.push({
+              x: player.x + 10,
+              y: player.y - player.height / 2,
+              width: 5,
+              height: 15,
+              color: '#f1c40f',
+              speed: bulletSpeed + 1
+            });
+            break;
+          case 2: // 三子弹
+            bullets.push({
+              x: player.x,
+              y: player.y - player.height / 2,
+              width: 5,
+              height: 15,
+              color: '#f1c40f',
+              speed: bulletSpeed + 2
+            });
+            bullets.push({
+              x: player.x - 15,
+              y: player.y - player.height / 3,
+              width: 5,
+              height: 15,
+              color: '#f1c40f',
+              speed: bulletSpeed + 2
+            });
+            bullets.push({
+              x: player.x + 15,
+              y: player.y - player.height / 3,
+              width: 5,
+              height: 15,
+              color: '#f1c40f',
+              speed: bulletSpeed + 2
+            });
+            break;
+          case 3: // 散弹
+            for (let i = -2; i <= 2; i++) {
+              bullets.push({
+                x: player.x + i * 10,
+                y: player.y - player.height / 2,
+                width: 5,
+                height: 15,
+                color: '#f1c40f',
+                speed: bulletSpeed + 3
+              });
+            }
+            break;
+        }
         lastBulletTime = currentTime;
       }
       
       // 移动子弹
       for (let i = bullets.length - 1; i >= 0; i--) {
-        bullets[i].y -= bulletSpeed;
+        // 使用子弹自身速度，而不是全局速度
+        bullets[i].y -= bullets[i].speed || bulletSpeed;
         
         // 移除超出画布的子弹
         if (bullets[i].y + bullets[i].height < 0) {
@@ -267,13 +386,19 @@
       
       // 生成敌机
       if (currentTime - lastEnemySpawn > enemySpawnRate) {
+        // 随机决定是否生成能掉落道具的特殊敌机（20%几率）
+        const isSpecial = Math.random() < 0.2;
+        
         enemies.push({
           x: Math.random() * (canvas.width - 40) + 20,
           y: -30,
-          width: 40,
-          height: 40,
-          color: '#e74c3c'
+          width: isSpecial ? 50 : 40, // 特殊敌机更大
+          height: isSpecial ? 50 : 40,
+          color: isSpecial ? '#f39c12' : '#e74c3c', // 特殊敌机为橙色
+          isSpecial: isSpecial, // 标记是否为特殊敌机
+          hasPowerup: isSpecial // 只有特殊敌机会掉落道具
         });
+        
         lastEnemySpawn = currentTime;
       }
       
@@ -297,9 +422,21 @@
       for (let i = bullets.length - 1; i >= 0; i--) {
         for (let j = enemies.length - 1; j >= 0; j--) {
           if (isColliding(bullets[i], enemies[j])) {
-            // 增加分数
-            score += 10;
+            // 增加分数（特殊敌机得分更高）
+            score += enemies[j].isSpecial ? 30 : 10;
             updateScore();
+            
+            // 如果是特殊敌机，则掉落道具
+            if (enemies[j].hasPowerup) {
+              const powerupType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+              powerups.push({
+                x: enemies[j].x,
+                y: enemies[j].y,
+                size: 15,
+                color: powerupType.color,
+                type: powerupType.effect
+              });
+            }
             
             // 移除子弹和敌机
             bullets.splice(i, 1);
@@ -319,6 +456,57 @@
           break;
         }
       }
+      
+      // 玩家与道具碰撞
+      for (let i = powerups.length - 1; i >= 0; i--) {
+        const powerup = powerups[i];
+        if (
+          player.x - player.width/2 < powerup.x + powerup.size &&
+          player.x + player.width/2 > powerup.x - powerup.size &&
+          player.y - player.height/2 < powerup.y + powerup.size &&
+          player.y + player.height/2 > powerup.y - powerup.size
+        ) {
+          // 应用道具效果
+          applyPowerup(powerup.type);
+          
+          // 移除道具
+          powerups.splice(i, 1);
+        }
+      }
+    }
+    
+    // 应用道具效果
+    function applyPowerup(type) {
+      // 增加能量等级，但不超过最大等级
+      if (player.powerLevel < player.powerMaxLevel) {
+        player.powerLevel++;
+      }
+      
+      // 显示提示信息
+      const message = type === 'speed' ? '子弹速度提升！' : '子弹范围扩大！';
+      showMessage(message);
+    }
+    
+    // 显示提示信息
+    function showMessage(text) {
+      const messageElement = document.createElement('div');
+      messageElement.textContent = text;
+      messageElement.style.position = 'absolute';
+      messageElement.style.left = '50%';
+      messageElement.style.top = '20%';
+      messageElement.style.transform = 'translate(-50%, -50%)';
+      messageElement.style.color = 'white';
+      messageElement.style.fontSize = '24px';
+      messageElement.style.fontWeight = 'bold';
+      messageElement.style.textShadow = '0 0 5px black';
+      messageElement.style.zIndex = '1000';
+      
+      document.querySelector('.game-wrapper').appendChild(messageElement);
+      
+      // 2秒后移除提示
+      setTimeout(() => {
+        messageElement.remove();
+      }, 2000);
     }
     
     // 碰撞检测辅助函数
@@ -331,11 +519,28 @@
       );
     }
     
+    // 更新星星背景
+    function updateStars() {
+      for (let i = 0; i < stars.length; i++) {
+        // 移动星星
+        stars[i].y += stars[i].speed;
+        
+        // 如果星星移出画布底部，重新放置到顶部
+        if (stars[i].y > canvas.height) {
+          stars[i].y = 0;
+          stars[i].x = Math.random() * canvas.width;
+        }
+      }
+    }
+    
     // 绘制游戏
     function drawGame() {
       // 清空画布
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // 绘制星星背景
+      drawStars();
       
       // 绘制玩家
       drawPlayer();
@@ -345,6 +550,67 @@
       
       // 绘制敌机
       drawEnemies();
+      
+      // 绘制道具
+      drawPowerups();
+      
+      // 绘制能量等级
+      drawPowerLevel();
+    }
+    
+    // 绘制道具
+    function drawPowerups() {
+      powerups.forEach(powerup => {
+        ctx.fillStyle = powerup.color;
+        ctx.beginPath();
+        ctx.arc(powerup.x, powerup.y, powerup.size, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 绘制闪光效果
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(powerup.x, powerup.y, powerup.size * 0.7, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+    }
+    
+    // 绘制能量等级
+    function drawPowerLevel() {
+      ctx.fillStyle = 'white';
+      ctx.font = '16px Arial';
+      ctx.fillText(`能量等级: ${player.powerLevel}`, 20, 30);
+      
+      // 绘制能量条
+      const barWidth = 100;
+      const barHeight = 10;
+      const x = 120;
+      const y = 22;
+      
+      // 背景
+      ctx.fillStyle = '#444';
+      ctx.fillRect(x, y, barWidth, barHeight);
+      
+      // 能量
+      const fillWidth = (player.powerLevel / player.powerMaxLevel) * barWidth;
+      ctx.fillStyle = '#3498db';
+      ctx.fillRect(x, y, fillWidth, barHeight);
+      
+      // 边框
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, barWidth, barHeight);
+    }
+    
+    // 绘制星星背景
+    function drawStars() {
+      for (let i = 0; i < stars.length; i++) {
+        const star = stars[i];
+        ctx.fillStyle = `rgba(255, 255, 255, ${star.brightness})`;
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
     
     // 绘制玩家
@@ -378,13 +644,40 @@
       enemies.forEach(enemy => {
         ctx.fillStyle = enemy.color;
         
-        // 绘制敌机（倒三角形）
-        ctx.beginPath();
-        ctx.moveTo(enemy.x, enemy.y + enemy.height/2);
-        ctx.lineTo(enemy.x + enemy.width/2, enemy.y - enemy.height/2);
-        ctx.lineTo(enemy.x - enemy.width/2, enemy.y - enemy.height/2);
-        ctx.closePath();
-        ctx.fill();
+        if (enemy.isSpecial) {
+          // 绘制特殊敌机（六边形）
+          ctx.beginPath();
+          const sides = 6;
+          const size = enemy.width / 2;
+          ctx.moveTo(enemy.x + size * Math.cos(0), enemy.y + size * Math.sin(0));
+          
+          for (let i = 1; i <= sides; i++) {
+            const angle = i * 2 * Math.PI / sides;
+            ctx.lineTo(enemy.x + size * Math.cos(angle), enemy.y + size * Math.sin(angle));
+          }
+          
+          ctx.closePath();
+          ctx.fill();
+          
+          // 添加闪光效果
+          ctx.strokeStyle = 'white';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // 添加能量标记
+          ctx.fillStyle = '#f1c40f';
+          ctx.beginPath();
+          ctx.arc(enemy.x, enemy.y, enemy.width / 6, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // 绘制普通敌机（倒三角形）
+          ctx.beginPath();
+          ctx.moveTo(enemy.x, enemy.y + enemy.height/2);
+          ctx.lineTo(enemy.x + enemy.width/2, enemy.y - enemy.height/2);
+          ctx.lineTo(enemy.x - enemy.width/2, enemy.y - enemy.height/2);
+          ctx.closePath();
+          ctx.fill();
+        }
       });
     }
     
